@@ -20,3 +20,6 @@ coverage/
 # Sistema operacional
 .DS_Store
 Thumbs.db
+
+# Ruff
+.ruff_cache/

@@ -1,6 +1,7 @@
-
 from datetime import datetime
-from pydantic import BaseModel, Field, ConfigDict
+from math import ceil
+
+from pydantic import BaseModel, ConfigDict, Field
 
 from app.models.enums import (
     IncidentCategory,
@@ -18,6 +19,21 @@ class IncidentCreate(BaseModel):
     location: str | None = Field(default=None, max_length=255)
 
 
+class IncidentUpdate(BaseModel):
+    title: str | None = Field(default=None, min_length=3, max_length=150)
+    description: str | None = Field(default=None, min_length=5, max_length=2000)
+    category: IncidentCategory | None = None
+    severity: IncidentSeverity | None = None
+    truck_id: str | None = Field(default=None, max_length=50)
+    location: str | None = Field(default=None, max_length=255)
+    version: int = Field(ge=1)
+
+
+class IncidentStatusUpdate(BaseModel):
+    status: IncidentStatus
+    version: int = Field(ge=1)
+
+
 class IncidentResponse(IncidentCreate):
     model_config = ConfigDict(from_attributes=True)
 
@@ -30,6 +46,31 @@ class IncidentResponse(IncidentCreate):
     updated_at: datetime
 
 
-class IncidentStatusUpdate(BaseModel):
-    status: IncidentStatus
-    version: int = Field(ge=1)
+class IncidentPage(BaseModel):
+    items: list[IncidentResponse]
+    total: int = Field(ge=0)
+    skip: int = Field(ge=0)
+    limit: int = Field(ge=1)
+    total_pages: int = Field(ge=0)
+
+    @classmethod
+    def create(
+        cls,
+        items: list[IncidentResponse],
+        total: int,
+        skip: int,
+        limit: int,
+    ):
+        return cls(
+            items=items,
+            total=total,
+            skip=skip,
+            limit=limit,
+            total_pages=ceil(total / limit),
+        )
+
+
+class IncidentStats(BaseModel):
+    total: int
+    by_severity: dict[str, int]
+    by_status: dict[str, int]

@@ -1,6 +1,7 @@
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
+from app.api.routes.incidents import router as incidents_router
 
 app = FastAPI(
     title="Logos API",
@@ -16,10 +17,9 @@ app.add_middleware(
     allow_headers=["Content-Type", "Authorization"],
 )
 
+app.include_router(incidents_router)
+
 
 @app.get("/health", tags=["Health"])
 def health_check():
-    return {
-        "status": "ok",
-        "message": "Logos API funcionando!"
-    }
+    return {"status": "ok", "message": "Logos API funcionando!"}

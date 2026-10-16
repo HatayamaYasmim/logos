@@ -1,12 +1,13 @@
-
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import (
     DateTime,
-    Enum as SQLEnum,
     Integer,
     String,
     Text,
+)
+from sqlalchemy import (
+    Enum as SQLEnum,
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -19,23 +20,17 @@ from app.models.enums import (
 
 
 def utc_now():
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 class Incident(Base):
     __tablename__ = "incidents"
 
-    id: Mapped[int] = mapped_column(
-        Integer, primary_key=True, index=True
-    )
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
 
-    title: Mapped[str] = mapped_column(
-        String(150), nullable=False
-    )
+    title: Mapped[str] = mapped_column(String(150), nullable=False)
 
-    description: Mapped[str] = mapped_column(
-        Text, nullable=False
-    )
+    description: Mapped[str] = mapped_column(Text, nullable=False)
 
     category: Mapped[IncidentCategory] = mapped_column(
         SQLEnum(IncidentCategory),
@@ -53,25 +48,15 @@ class Incident(Base):
         nullable=False,
     )
 
-    truck_id: Mapped[str | None] = mapped_column(
-        String(50), nullable=True
-    )
+    truck_id: Mapped[str | None] = mapped_column(String(50), nullable=True)
 
-    location: Mapped[str | None] = mapped_column(
-        String(255), nullable=True
-    )
+    location: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
-    assigned_to: Mapped[str | None] = mapped_column(
-        String(100), nullable=True
-    )
+    assigned_to: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
-    updated_by: Mapped[str | None] = mapped_column(
-        String(100), nullable=True
-    )
+    updated_by: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
-    version: Mapped[int] = mapped_column(
-        Integer, default=1, nullable=False
-    )
+    version: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

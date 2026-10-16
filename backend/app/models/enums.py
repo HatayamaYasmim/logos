@@ -1,5 +1,5 @@
-
 from enum import Enum
+
 
 class IncidentCategory(str, Enum):
     VEHICLE_ACCIDENT = "Acidente com Veículo"
