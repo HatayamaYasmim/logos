@@ -300,3 +300,74 @@ def test_concurrent_status_updates(client):
 
     # O banco preserva a alteração vencedora.
     assert current.json()["status"] == successful_response.json()["status"]
+
+
+def test_create_incident_records_authenticated_user(client):
+    payload = {
+        "title": "Falha mecânica na rodovia",
+        "description": "Veículo apresentou falha no sistema de freios.",
+        "category": "Problema Mecânico",
+        "severity": "Alta",
+        "truck_id": "TRK-001",
+        "location": "BR-101",
+    }
+
+    response = client.post("/incidents", json=payload)
+
+    assert response.status_code == 201
+
+    incident = response.json()
+
+    assert incident["updated_by"] == "teste@logos.local"
+    assert incident["version"] == 1
+
+
+
+def test_update_status_records_authenticated_user(client):
+    payload = {
+        "title": "Bloqueio parcial da rodovia",
+        "description": "Uma faixa está bloqueada após um acidente.",
+        "category": "Bloqueio de Pista",
+        "severity": "Alta",
+    }
+
+    created = client.post("/incidents", json=payload)
+
+    assert created.status_code == 201
+
+    incident = created.json()
+
+    response = client.patch(
+        f"/incidents/{incident['id']}/status",
+        json={
+            "status": "Em Investigação",
+            "version": incident["version"],
+        },
+    )
+
+    assert response.status_code == 200
+
+    updated = response.json()
+
+    assert updated["updated_by"] == "teste@logos.local"
+    assert updated["status"] == "Em Investigação"
+    assert updated["version"] == incident["version"] + 1
+
+    # Tentativa com a versão antiga.
+    conflict = client.patch(
+        f"/incidents/{incident['id']}/status",
+        json={
+            "status": "Fechado",
+            "version": incident["version"],
+        },
+    )
+
+    assert conflict.status_code == 409
+
+    # Confirma que a tentativa rejeitada não sobrescreveu os dados.
+    current = client.get(f"/incidents/{incident['id']}")
+
+    assert current.status_code == 200
+    assert current.json()["status"] == "Em Investigação"
+    assert current.json()["updated_by"] == "teste@logos.local"
+    assert current.json()["version"] == updated["version"]

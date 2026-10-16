@@ -1,5 +1,7 @@
+
 from datetime import datetime
 from math import ceil
+from typing import Self
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -10,7 +12,11 @@ from app.models.enums import (
 )
 
 
-class IncidentCreate(BaseModel):
+class IncidentWriteSchema(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+
+class IncidentCreate(IncidentWriteSchema):
     title: str = Field(min_length=3, max_length=150)
     description: str = Field(min_length=5, max_length=2000)
     category: IncidentCategory
@@ -19,9 +25,17 @@ class IncidentCreate(BaseModel):
     location: str | None = Field(default=None, max_length=255)
 
 
-class IncidentUpdate(BaseModel):
-    title: str | None = Field(default=None, min_length=3, max_length=150)
-    description: str | None = Field(default=None, min_length=5, max_length=2000)
+class IncidentUpdate(IncidentWriteSchema):
+    title: str | None = Field(
+        default=None,
+        min_length=3,
+        max_length=150,
+    )
+    description: str | None = Field(
+        default=None,
+        min_length=5,
+        max_length=2000,
+    )
     category: IncidentCategory | None = None
     severity: IncidentSeverity | None = None
     truck_id: str | None = Field(default=None, max_length=50)
@@ -29,7 +43,7 @@ class IncidentUpdate(BaseModel):
     version: int = Field(ge=1)
 
 
-class IncidentStatusUpdate(BaseModel):
+class IncidentStatusUpdate(IncidentWriteSchema):
     status: IncidentStatus
     version: int = Field(ge=1)
 
@@ -60,7 +74,7 @@ class IncidentPage(BaseModel):
         total: int,
         skip: int,
         limit: int,
-    ):
+    ) -> Self:
         return cls(
             items=items,
             total=total,

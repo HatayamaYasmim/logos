@@ -1,3 +1,4 @@
+
 from datetime import UTC, datetime
 
 from fastapi import HTTPException
@@ -24,8 +25,19 @@ class IncidentService:
         self.db = db
         self.repository = IncidentRepository(db)
 
-    def create(self, data: IncidentCreate) -> Incident:
-        incident = Incident(**data.model_dump())
+    def create(
+        self,
+        data: IncidentCreate,
+        updated_by: str,
+    ) -> Incident:
+        values = data.model_dump(
+            exclude={"updated_by"},
+        )
+
+        incident = Incident(
+            **values,
+            updated_by=updated_by,
+        )
 
         try:
             self.repository.create(incident)
@@ -55,7 +67,6 @@ class IncidentService:
         skip: int = 0,
         limit: int = 100,
     ) -> IncidentPage:
-
         incidents = self.repository.list_all(
             severity=severity,
             category=category,
@@ -87,8 +98,9 @@ class IncidentService:
         version: int,
         values: dict,
     ) -> Incident:
-        # Verificação para distinguir 404 de 409.
-        # A integridade é garantida pelo UPDATE atômico.
+        # Verifica se o incidente existe.
+        # A integridade é garantida pelo UPDATE atômico
+        # executado pelo repository.
         self.get_by_id(incident_id)
 
         try:
@@ -104,7 +116,7 @@ class IncidentService:
             if incident is None:
                 self.db.rollback()
 
-                # O incidente pode ter sido excluído.
+                # Verifica novamente se o incidente foi excluído.
                 self.get_by_id(incident_id)
 
                 raise HTTPException(
@@ -127,19 +139,32 @@ class IncidentService:
         self,
         incident_id: int,
         data: IncidentUpdate,
+        updated_by: str,
     ) -> Incident:
         values = data.model_dump(
             exclude_unset=True,
-            exclude={"version", "status"},
+            exclude={
+                "version",
+                "status",
+                "updated_by",
+            },
         )
 
         # Campos obrigatórios não podem ser anulados.
-        for field in ("title", "description", "category", "severity"):
+        for field in (
+            "title",
+            "description",
+            "category",
+            "severity",
+        ):
             if field in values and values[field] is None:
                 raise HTTPException(
                     status_code=422,
                     detail=f"O campo '{field}' não pode ser nulo.",
                 )
+
+        # A autoria vem do usuário autenticado via JWT.
+        values["updated_by"] = updated_by
 
         return self._update_with_version(
             incident_id,
@@ -151,11 +176,15 @@ class IncidentService:
         self,
         incident_id: int,
         data: IncidentStatusUpdate,
+        updated_by: str,
     ) -> Incident:
         return self._update_with_version(
             incident_id,
             data.version,
-            {"status": data.status},
+            {
+                "status": data.status,
+                "updated_by": updated_by,
+            },
         )
 
     def delete(self, incident_id: int) -> None:

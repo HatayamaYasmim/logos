@@ -1,4 +1,5 @@
 import os
+from types import SimpleNamespace
 
 import pytest
 from dotenv import load_dotenv
@@ -7,6 +8,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.engine import make_url
 from sqlalchemy.orm import sessionmaker
 
+from app.api.dependencies.auth import get_current_user
 from app.database.session import Base, get_db
 from app.main import app
 from app.models.incident import Incident
@@ -61,13 +63,19 @@ def prepare_test_database():
 @pytest.fixture
 def client(prepare_test_database):
     app.dependency_overrides[get_db] = override_get_db
+    app.dependency_overrides[get_current_user] = lambda: SimpleNamespace(
+        id=1,
+        name="Analista de Teste",
+        email="teste@logos.local",
+        is_active=True,
+    )
 
     try:
         with TestClient(app) as test_client:
             yield test_client
     finally:
-        app.dependency_overrides.clear()
-
+        app.dependency_overrides.pop(get_current_user, None)
+        app.dependency_overrides.pop(get_db, None)
 
 @pytest.fixture(autouse=True)
 def clean_database(prepare_test_database):
