@@ -187,17 +187,34 @@ class IncidentService:
             },
         )
 
-    def delete(self, incident_id: int) -> None:
+
+    def delete(
+        self,
+        incident_id: int,
+        version: int,
+    ) -> None:
+        # Confirma que o incidente existe.
         self.get_by_id(incident_id)
 
         try:
-            deleted = self.repository.delete(incident_id)
+            deleted = self.repository.delete_if_version(
+                incident_id=incident_id,
+                expected_version=version,
+            )
 
             if not deleted:
                 self.db.rollback()
+
+                # Se não existe mais, retorna 404.
+                self.get_by_id(incident_id)
+
+                # Se existe, a versão mudou.
                 raise HTTPException(
-                    status_code=404,
-                    detail="Incidente não encontrado.",
+                    status_code=409,
+                    detail=(
+                        "Este incidente foi alterado por outro "
+                        "analista. Atualize os dados antes de excluir."
+                    ),
                 )
 
             self.db.commit()

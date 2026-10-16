@@ -129,12 +129,17 @@ def update_incident(
     )
 
 
+
 @router.delete(
     "/{incident_id}",
     status_code=status.HTTP_204_NO_CONTENT,
 )
 def delete_incident(
     incident_id: int,
+    version: int = Query(ge=1),
     service: IncidentService = Depends(get_service),
 ):
-    service.delete(incident_id)
+    service.delete(
+        incident_id=incident_id,
+        version=version,
+    )

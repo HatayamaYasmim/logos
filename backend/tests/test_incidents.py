@@ -231,16 +231,56 @@ def test_update_incident(client):
     assert response.json()["title"] == ("Falha mecânica resolvida parcialmente")
 
 
+
 def test_delete_incident(client):
     incident = create_incident(client)
 
-    response = client.delete(f"/incidents/{incident['id']}")
+    response = client.delete(
+        f"/incidents/{incident['id']}",
+        params={"version": incident["version"]},
+    )
 
     assert response.status_code == 204
 
-    get_response = client.get(f"/incidents/{incident['id']}")
+    get_response = client.get(
+        f"/incidents/{incident['id']}"
+    )
 
     assert get_response.status_code == 404
+
+
+def test_delete_incident_with_outdated_version(client):
+    incident = create_incident(client)
+
+    incident_id = incident["id"]
+    original_version = incident["version"]
+
+    # Primeiro analista atualiza o incidente.
+    updated = client.patch(
+        f"/incidents/{incident_id}/status",
+        json={
+            "status": "Em Investigação",
+            "version": original_version,
+        },
+    )
+
+    assert updated.status_code == 200
+    assert updated.json()["version"] == original_version + 1
+
+    # Outro analista tenta excluir usando a versão antiga.
+    response = client.delete(
+        f"/incidents/{incident_id}",
+        params={"version": original_version},
+    )
+
+    assert response.status_code == 409
+
+    # Confirma que o incidente continua no banco.
+    current = client.get(f"/incidents/{incident_id}")
+
+    assert current.status_code == 200
+    assert current.json()["status"] == "Em Investigação"
+    assert current.json()["version"] == original_version + 1
 
 
 def test_concurrent_status_updates(client):

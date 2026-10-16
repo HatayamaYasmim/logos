@@ -150,12 +150,24 @@ class IncidentRepository:
         self.db.expire_all()
         return self.get_by_id(updated_id)
 
-    def delete(self, incident_id: int) -> bool:
 
+    def delete_if_version(
+        self,
+        incident_id: int,
+        expected_version: int,
+    ) -> bool:
         statement = (
-            delete(Incident).where(Incident.id == incident_id).returning(Incident.id)
+            delete(Incident)
+            .where(
+                Incident.id == incident_id,
+                Incident.version == expected_version,
+            )
+            .returning(Incident.id)
         )
 
-        deleted_id = self.db.execute(statement).scalar_one_or_none()
+        deleted_id = (
+            self.db.execute(statement)
+            .scalar_one_or_none()
+        )
 
         return deleted_id is not None
