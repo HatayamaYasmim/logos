@@ -4,6 +4,7 @@ import type { LoginCredentials } from "../services/auth";
 
 export interface AuthContextType {
   isAuthenticated: boolean;
+  isLoading: boolean;
   email: string | null;
   login: (credentials: LoginCredentials) => Promise<void>;
   logout: () => void;

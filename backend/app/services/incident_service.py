@@ -1,4 +1,3 @@
-
 from datetime import UTC, datetime
 
 from fastapi import HTTPException
@@ -186,7 +185,6 @@ class IncidentService:
                 "updated_by": updated_by,
             },
         )
-
 
     def delete(
         self,

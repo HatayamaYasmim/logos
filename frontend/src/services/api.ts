@@ -1,10 +1,10 @@
-const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
-let accessToken: string | null = null;
+let csrfToken: string | null = null;
 let unauthorizedHandler: (() => void) | null = null;
 
-export function setAccessToken(token: string | null) {
-  accessToken = token;
+export function setCsrfToken(token: string | null) {
+  csrfToken = token;
 }
 
 export function setUnauthorizedHandler(handler: (() => void) | null) {
@@ -26,9 +26,15 @@ export async function apiRequest<T>(
   options?: RequestInit,
 ): Promise<T> {
   const headers = new Headers(options?.headers);
+  const method = (options?.method ?? "GET").toUpperCase();
 
-  if (accessToken) {
-    headers.set("Authorization", `Bearer ${accessToken}`);
+  // Operações que alteram dados precisam do token CSRF.
+  // O login é a exceção porque ainda não existe uma sessão.
+  const requiresCsrf =
+    !["GET", "HEAD", "OPTIONS"].includes(method) && path !== "/auth/login";
+
+  if (requiresCsrf && csrfToken) {
+    headers.set("X-CSRF-Token", csrfToken);
   }
 
   if (
@@ -45,7 +51,9 @@ export async function apiRequest<T>(
   try {
     response = await fetch(`${API_URL}${path}`, {
       ...options,
+      method,
       headers,
+      credentials: "include",
     });
   } catch {
     throw new ApiError(0, "Não foi possível conectar ao servidor.");
@@ -55,16 +63,27 @@ export async function apiRequest<T>(
     let message = "Não foi possível concluir a operação.";
 
     try {
-      const error = await response.json();
+      const error: unknown = await response.json();
 
-      if (typeof error.detail === "string") {
+      if (
+        typeof error === "object" &&
+        error !== null &&
+        "detail" in error &&
+        typeof error.detail === "string"
+      ) {
         message = error.detail;
       }
     } catch {
       // Mantém a mensagem padrão.
     }
 
-    if (response.status === 401 && accessToken !== null) {
+    // O login e a restauração da sessão tratam seus próprios erros.
+    if (
+      response.status === 401 &&
+      path !== "/auth/login" &&
+      path !== "/auth/me" &&
+      path !== "/auth/logout"
+    ) {
       unauthorizedHandler?.();
     }
 

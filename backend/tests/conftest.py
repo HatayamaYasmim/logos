@@ -1,4 +1,3 @@
-
 import os
 from types import SimpleNamespace
 
@@ -26,9 +25,7 @@ if not TEST_DATABASE_URL:
 database_name = make_url(TEST_DATABASE_URL).database
 
 if database_name != "logos_test":
-    raise RuntimeError(
-        "Os testes devem utilizar exclusivamente logos_test."
-    )
+    raise RuntimeError("Os testes devem utilizar exclusivamente logos_test.")
 
 
 test_engine = create_engine(
@@ -68,13 +65,11 @@ def prepare_test_database():
 def client(prepare_test_database):
     app.dependency_overrides[get_db] = override_get_db
 
-    app.dependency_overrides[get_current_user] = (
-        lambda: SimpleNamespace(
-            id=1,
-            name="Analista de Teste",
-            email="teste@logos.local",
-            is_active=True,
-        )
+    app.dependency_overrides[get_current_user] = lambda: SimpleNamespace(
+        id=1,
+        name="Analista de Teste",
+        email="teste@logos.local",
+        is_active=True,
     )
 
     try:

@@ -150,7 +150,6 @@ class IncidentRepository:
         self.db.expire_all()
         return self.get_by_id(updated_id)
 
-
     def delete_if_version(
         self,
         incident_id: int,
@@ -165,9 +164,6 @@ class IncidentRepository:
             .returning(Incident.id)
         )
 
-        deleted_id = (
-            self.db.execute(statement)
-            .scalar_one_or_none()
-        )
+        deleted_id = self.db.execute(statement).scalar_one_or_none()
 
         return deleted_id is not None

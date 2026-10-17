@@ -1,8 +1,7 @@
-
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
-from app.api.dependencies.auth import get_current_user
+from app.api.dependencies.auth import get_current_user, verify_csrf
 from app.database.session import get_db
 from app.models.enums import (
     IncidentCategory,
@@ -33,10 +32,12 @@ def get_service(
     return IncidentService(db)
 
 
+# Cadastrar incidente — exige autenticação e CSRF.
 @router.post(
     "",
     response_model=IncidentResponse,
     status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(verify_csrf)],
 )
 def create_incident(
     data: IncidentCreate,
@@ -49,6 +50,7 @@ def create_incident(
     )
 
 
+# Listar incidentes — exige autenticação.
 @router.get(
     "",
     response_model=IncidentPage,
@@ -74,6 +76,7 @@ def list_incidents(
 
 
 # Rotas estáticas antes das rotas dinâmicas.
+# Indicadores — exige autenticação.
 @router.get(
     "/stats",
     response_model=IncidentStats,
@@ -84,6 +87,7 @@ def get_incident_stats(
     return service.get_stats()
 
 
+# Consultar incidente — exige autenticação.
 @router.get(
     "/{incident_id}",
     response_model=IncidentResponse,
@@ -95,9 +99,11 @@ def get_incident(
     return service.get_by_id(incident_id)
 
 
+# Atualizar status — exige autenticação e CSRF.
 @router.patch(
     "/{incident_id}/status",
     response_model=IncidentResponse,
+    dependencies=[Depends(verify_csrf)],
 )
 def update_incident_status(
     incident_id: int,
@@ -112,9 +118,11 @@ def update_incident_status(
     )
 
 
+# Editar incidente — exige autenticação e CSRF.
 @router.patch(
     "/{incident_id}",
     response_model=IncidentResponse,
+    dependencies=[Depends(verify_csrf)],
 )
 def update_incident(
     incident_id: int,
@@ -129,10 +137,11 @@ def update_incident(
     )
 
 
-
+# Excluir incidente — exige autenticação e CSRF.
 @router.delete(
     "/{incident_id}",
     status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(verify_csrf)],
 )
 def delete_incident(
     incident_id: int,

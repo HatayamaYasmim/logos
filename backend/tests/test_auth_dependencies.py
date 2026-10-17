@@ -4,8 +4,11 @@ from app.api.dependencies.auth import get_current_user
 from app.main import app
 
 
-def test_incidents_without_token_returns_401():
-    original_override = app.dependency_overrides.pop(get_current_user, None)
+def test_incidents_without_cookie_returns_401():
+    original_override = app.dependency_overrides.pop(
+        get_current_user,
+        None,
+    )
 
     try:
         with TestClient(app) as client:
@@ -17,20 +20,23 @@ def test_incidents_without_token_returns_401():
             app.dependency_overrides[get_current_user] = original_override
 
 
-def test_incidents_with_invalid_token_returns_401(monkeypatch):
+def test_incidents_with_invalid_cookie_returns_401(monkeypatch):
     monkeypatch.setenv(
         "JWT_SECRET_KEY",
         "chave-de-teste-exclusiva-com-32-caracteres",
     )
 
-    original_override = app.dependency_overrides.pop(get_current_user, None)
+    original_override = app.dependency_overrides.pop(
+        get_current_user,
+        None,
+    )
 
     try:
         with TestClient(app) as client:
             response = client.get(
                 "/incidents",
-                headers={
-                    "Authorization": "Bearer token-invalido",
+                cookies={
+                    "logos_session": "token-invalido",
                 },
             )
 

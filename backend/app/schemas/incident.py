@@ -1,4 +1,3 @@
-
 from datetime import datetime
 from math import ceil
 from typing import Self

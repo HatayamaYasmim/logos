@@ -1,6 +1,34 @@
 from concurrent.futures import ThreadPoolExecutor
 from threading import Barrier
 
+import pytest
+
+from app.api.dependencies.auth import verify_csrf
+from app.main import app
+
+
+@pytest.fixture(autouse=True)
+def bypass_csrf_for_incident_business_tests(client):
+    """
+    Os testes deste arquivo validam as regras de negócio
+    dos incidentes, usando o usuário autenticado simulado
+    pela fixture client.
+
+    A proteção CSRF real é testada separadamente
+    em test_auth_integration.py.
+    """
+    original_override = app.dependency_overrides.get(verify_csrf)
+
+    app.dependency_overrides[verify_csrf] = lambda: None
+
+    try:
+        yield
+    finally:
+        if original_override is None:
+            app.dependency_overrides.pop(verify_csrf, None)
+        else:
+            app.dependency_overrides[verify_csrf] = original_override
+
 
 def incident_payload(
     title="Falha mecânica na BR-101",
@@ -231,7 +259,6 @@ def test_update_incident(client):
     assert response.json()["title"] == ("Falha mecânica resolvida parcialmente")
 
 
-
 def test_delete_incident(client):
     incident = create_incident(client)
 
@@ -242,9 +269,7 @@ def test_delete_incident(client):
 
     assert response.status_code == 204
 
-    get_response = client.get(
-        f"/incidents/{incident['id']}"
-    )
+    get_response = client.get(f"/incidents/{incident['id']}")
 
     assert get_response.status_code == 404
 
@@ -360,7 +385,6 @@ def test_create_incident_records_authenticated_user(client):
 
     assert incident["updated_by"] == "teste@logos.local"
     assert incident["version"] == 1
-
 
 
 def test_update_status_records_authenticated_user(client):

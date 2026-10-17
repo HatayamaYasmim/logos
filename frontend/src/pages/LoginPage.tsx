@@ -14,13 +14,24 @@ import { ThemeToggle } from "../components/ThemeToggle";
 import { ParticleWaveBackground } from "../components/ParticleWaveBackground";
 
 export default function LoginPage() {
-  const { login, isAuthenticated } = useAuth();
+  const { login, isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  if (isLoading) {
+    return (
+      <div
+        role="status"
+        className="flex min-h-screen items-center justify-center bg-slate-100 text-slate-600 dark:bg-slate-950 dark:text-slate-300"
+      >
+        Restaurando sessão...
+      </div>
+    );
+  }
 
   if (isAuthenticated) {
     return <Navigate to="/" replace />;

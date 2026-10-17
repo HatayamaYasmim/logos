@@ -8,54 +8,91 @@ import {
 
 import { useQueryClient } from "@tanstack/react-query";
 
-import { setAccessToken, setUnauthorizedHandler } from "../services/api";
+import { setCsrfToken, setUnauthorizedHandler } from "../services/api";
 
-import { login as loginRequest, type LoginCredentials } from "../services/auth";
+import {
+  getSession,
+  login as loginRequest,
+  logout as logoutRequest,
+  type LoginCredentials,
+} from "../services/auth";
 
 import { AuthContext } from "./auth-context";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [token, setToken] = useState<string | null>(null);
-  const [email, setEmail] = useState<string | null>(null);
-
   const queryClient = useQueryClient();
 
-  const logout = useCallback(() => {
-    setAccessToken(null);
-    setToken(null);
+  const [email, setEmail] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const clearSession = useCallback(() => {
+    setCsrfToken(null);
     setEmail(null);
     queryClient.clear();
   }, [queryClient]);
 
   useEffect(() => {
-    setUnauthorizedHandler(logout);
+    let cancelled = false;
+
+    setUnauthorizedHandler(clearSession);
+
+    async function restoreSession() {
+      try {
+        const session = await getSession();
+
+        if (cancelled) return;
+
+        setCsrfToken(session.csrf_token);
+        setEmail(session.email);
+      } catch {
+        if (cancelled) return;
+
+        clearSession();
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    void restoreSession();
 
     return () => {
+      cancelled = true;
       setUnauthorizedHandler(null);
     };
-  }, [logout]);
+  }, [clearSession]);
 
   const login = useCallback(
     async (credentials: LoginCredentials) => {
-      const response = await loginRequest(credentials);
+      const session = await loginRequest(credentials);
 
       queryClient.clear();
 
-      setAccessToken(response.access_token);
-      setToken(response.access_token);
-      setEmail(credentials.email.trim().toLowerCase());
+      setCsrfToken(session.csrf_token);
+      setEmail(session.email);
     },
     [queryClient],
   );
 
+  const logout = useCallback(() => {
+    // A requisição começa enquanto o token CSRF ainda está disponível.
+    void logoutRequest().catch(() => {
+      // Falhas de rede não impedem a limpeza da interface.
+    });
+
+    clearSession();
+  }, [clearSession]);
+
   const value = useMemo(
     () => ({
-      isAuthenticated: Boolean(token),
+      isAuthenticated: email !== null,
+      isLoading,
       email,
       login,
       logout,
     }),
-    [token, email, login, logout],
+    [email, isLoading, login, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
