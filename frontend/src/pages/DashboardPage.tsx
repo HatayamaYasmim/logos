@@ -9,15 +9,17 @@ import {
   RefreshCw,
   X,
 } from "lucide-react";
+import { toast } from "sonner";
 
 import { useAuth } from "../contexts/auth-context";
+import { ThemeToggle } from "../components/ThemeToggle";
 import { IncidentCreateModal } from "../components/incidents/IncidentCreateModal";
+import { IncidentDeleteModal } from "../components/incidents/IncidentDeleteModal";
 import { IncidentEditModal } from "../components/incidents/IncidentEditModal";
 import { IncidentTable } from "../components/incidents/IncidentTable";
 
 import { ApiError, apiRequest } from "../services/api";
 import { getIncident, getIncidents } from "../services/incidents";
-import { toast } from "sonner";
 
 import type {
   Incident,
@@ -26,7 +28,6 @@ import type {
   IncidentStats,
   IncidentStatus,
 } from "../types/incident";
-import { IncidentDeleteModal } from "../components/incidents/IncidentDeleteModal";
 
 const categories: IncidentCategory[] = [
   "Acidente com Veículo",
@@ -47,24 +48,34 @@ const statuses: IncidentStatus[] = [
 
 const PAGE_SIZE = 10;
 
+const selectClass =
+  "rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm " +
+  "text-slate-900 outline-none focus:border-blue-600 " +
+  "dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 " +
+  "dark:focus:border-blue-400";
+
 export default function DashboardPage() {
   const { email, logout } = useAuth();
+
   const [severity, setSeverity] = useState<IncidentSeverity | "">("");
   const [category, setCategory] = useState<IncidentCategory | "">("");
   const [status, setStatus] = useState<IncidentStatus | "">("");
   const [page, setPage] = useState(1);
+
   const [selectedIncident, setSelectedIncident] = useState<Incident | null>(
     null,
   );
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+
   const [editingIncident, setEditingIncident] = useState<Incident | null>(null);
 
-  const [editOpenError, setEditOpenError] = useState("");
-  const [openingEditId, setOpeningEditId] = useState<number | null>(null);
   const [deletingIncident, setDeletingIncident] = useState<Incident | null>(
     null,
   );
+
+  const [editOpenError, setEditOpenError] = useState("");
+  const [openingEditId, setOpeningEditId] = useState<number | null>(null);
 
   const skip = (page - 1) * PAGE_SIZE;
 
@@ -89,26 +100,32 @@ export default function DashboardPage() {
   const result = incidentsQuery.data;
   const totalPages = result?.total_pages ?? 0;
 
-  const changeFilters = () => setPage(1);
+  const isRefreshing = statsQuery.isFetching || incidentsQuery.isFetching;
+
+  function changeFilters() {
+    setPage(1);
+  }
 
   async function refreshData() {
+    if (isRefreshing) return;
+
     const toastId = toast.loading("Atualizando dados...");
 
-    const [statsResult, incidentsResult] = await Promise.all([
-      statsQuery.refetch(),
-      incidentsQuery.refetch(),
-    ]);
+    try {
+      const [statsResult, incidentsResult] = await Promise.all([
+        statsQuery.refetch(),
+        incidentsQuery.refetch(),
+      ]);
 
-    if (statsResult.isError || incidentsResult.isError) {
-      toast.error("Não foi possível atualizar os dados.", {
-        id: toastId,
-      });
-      return;
+      if (statsResult.isError || incidentsResult.isError) {
+        toast.error("Não foi possível atualizar os dados.", { id: toastId });
+        return;
+      }
+
+      toast.success("Dados atualizados com sucesso!", { id: toastId });
+    } catch {
+      toast.error("Não foi possível conectar ao servidor.", { id: toastId });
     }
-
-    toast.success("Dados atualizados com sucesso!", {
-      id: toastId,
-    });
   }
 
   async function openEdit(incident: Incident) {
@@ -134,63 +151,74 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
-      <header className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-5">
+    <div className="min-h-screen bg-slate-50 text-slate-900 transition-colors dark:bg-slate-950 dark:text-slate-100">
+      {/* Cabeçalho */}
+      <header className="border-b border-slate-200 bg-white transition-colors dark:border-slate-800 dark:bg-slate-900">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-6 py-5">
           <div>
             <h1 className="text-2xl font-bold">Logos</h1>
-            <p className="text-sm text-slate-500">
+
+            <p className="text-sm text-slate-500 dark:text-slate-400">
               Central de Resposta a Incidentes
             </p>
-            <p className="mt-1 text-xs text-slate-500">Analista: {email}</p>
+
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+              Analista: {email}
+            </p>
           </div>
 
-          <button
-            type="button"
-            onClick={() => void refreshData()}
-            disabled={statsQuery.isFetching || incidentsQuery.isFetching}
-            className="flex items-center gap-2 rounded-lg border border-slate-200 px-4 py-1.5 text-sm hover:bg-slate-50 disabled:opacity-50"
-          >
-            <RefreshCw
-              size={16}
-              className={
-                statsQuery.isFetching || incidentsQuery.isFetching
-                  ? "animate-spin"
-                  : ""
-              }
-            />
-            Atualizar
-          </button>
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={() => void refreshData()}
+              disabled={isRefreshing}
+              className="flex items-center gap-2 rounded-lg border border-slate-200 px-4 py-1.5 text-sm transition-colors hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:hover:bg-slate-800"
+            >
+              <RefreshCw
+                size={16}
+                className={isRefreshing ? "animate-spin" : ""}
+              />
+              Atualizar
+            </button>
 
-          <button
-            type="button"
-            onClick={logout}
-            className="flex items-center gap-2 rounded-lg border border-red-200 px-4 py-1.5 text-sm text-red-700 transition-colors hover:bg-red-50"
-          >
-            <LogOut size={16} />
-            Sair
-          </button>
+            <ThemeToggle />
+
+            <button
+              type="button"
+              onClick={logout}
+              className="flex items-center gap-2 rounded-lg border border-red-200 px-4 py-1.5 text-sm text-red-700 transition-colors hover:bg-red-50 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-950/50"
+            >
+              <LogOut size={16} />
+              Sair
+            </button>
+          </div>
         </div>
       </header>
 
       <main className="mx-auto max-w-7xl space-y-8 px-6 py-8">
+        {/* Visão geral */}
         <section>
           <h2 className="text-2xl font-semibold">Visão geral da operação</h2>
-          <p className="mt-1 text-sm text-slate-500">
+
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
             Acompanhe as prioridades e o andamento dos incidentes.
           </p>
 
           {statsQuery.isPending ? (
-            <p role="status" className="mt-6">
+            <p
+              role="status"
+              className="mt-6 text-slate-500 dark:text-slate-400"
+            >
               Carregando indicadores...
             </p>
           ) : statsQuery.isError ? (
             <div
               role="alert"
-              className="mt-6 rounded-xl bg-red-50 p-5 text-red-700"
+              className="mt-6 rounded-xl border border-red-200 bg-red-50 p-5 text-red-700 dark:border-red-900 dark:bg-red-950/50 dark:text-red-300"
             >
               Não foi possível carregar os indicadores.
               <button
+                type="button"
                 onClick={() => void statsQuery.refetch()}
                 className="ml-3 underline"
               >
@@ -217,16 +245,26 @@ export default function DashboardPage() {
                 },
               ].map((item) => {
                 const Icon = item.icon;
+
                 return (
                   <div
                     key={item.label}
-                    className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm"
+                    className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition-colors dark:border-slate-800 dark:bg-slate-900"
                   >
                     <div className="flex items-center justify-between">
-                      <p className="text-sm text-slate-500">{item.label}</p>
-                      <Icon size={20} className="text-slate-500" />
+                      <p className="text-sm text-slate-500 dark:text-slate-400">
+                        {item.label}
+                      </p>
+
+                      <Icon
+                        size={20}
+                        className="text-slate-500 dark:text-slate-400"
+                      />
                     </div>
-                    <p className="mt-5 text-3xl font-bold">{item.value}</p>
+
+                    <p className="mt-5 text-3xl font-bold text-slate-900 dark:text-slate-100">
+                      {item.value}
+                    </p>
                   </div>
                 );
               })}
@@ -234,14 +272,16 @@ export default function DashboardPage() {
           )}
         </section>
 
-        <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-          <div className="border-b border-slate-200 p-5">
+        {/* Incidentes */}
+        <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-colors dark:border-slate-800 dark:bg-slate-900">
+          <div className="border-b border-slate-200 p-5 dark:border-slate-800">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
                 <h2 className="text-lg font-semibold">
                   Incidentes em operação
                 </h2>
-                <p className="mt-1 text-sm text-slate-500">
+
+                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                   Filtre e acompanhe os registros da frota.
                 </p>
               </div>
@@ -249,13 +289,14 @@ export default function DashboardPage() {
               <button
                 type="button"
                 onClick={() => setIsCreateModalOpen(true)}
-                className="flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-blue-800"
+                className="flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-500"
               >
                 <Plus size={18} />
                 Novo incidente
               </button>
             </div>
 
+            {/* Filtros */}
             <div className="mt-5 grid gap-3 md:grid-cols-3">
               <label className="flex flex-col gap-2 text-sm">
                 Criticidade
@@ -266,9 +307,10 @@ export default function DashboardPage() {
                     setSeverity(event.target.value as IncidentSeverity | "");
                     changeFilters();
                   }}
-                  className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm"
+                  className={selectClass}
                 >
                   <option value="">Todas</option>
+
                   {severities.map((item) => (
                     <option key={item} value={item}>
                       {item}
@@ -286,9 +328,10 @@ export default function DashboardPage() {
                     setCategory(event.target.value as IncidentCategory | "");
                     changeFilters();
                   }}
-                  className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm"
+                  className={selectClass}
                 >
                   <option value="">Todas</option>
+
                   {categories.map((item) => (
                     <option key={item} value={item}>
                       {item}
@@ -306,9 +349,10 @@ export default function DashboardPage() {
                     setStatus(event.target.value as IncidentStatus | "");
                     changeFilters();
                   }}
-                  className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm"
+                  className={selectClass}
                 >
                   <option value="">Todos</option>
+
                   {statuses.map((item) => (
                     <option key={item} value={item}>
                       {item}
@@ -319,15 +363,17 @@ export default function DashboardPage() {
             </div>
           </div>
 
+          {/* Tabela */}
           {incidentsQuery.isError ? (
             <div role="alert" className="p-8 text-center">
-              <p className="text-red-700">
+              <p className="text-red-700 dark:text-red-400">
                 Não foi possível carregar os incidentes.
               </p>
+
               <button
                 type="button"
                 onClick={() => void incidentsQuery.refetch()}
-                className="mt-3 rounded-lg bg-blue-700 px-4 py-1.5 text-sm text-white"
+                className="mt-3 rounded-lg bg-blue-700 px-4 py-1.5 text-sm text-white hover:bg-blue-800 dark:bg-blue-600"
               >
                 Tentar novamente
               </button>
@@ -337,7 +383,7 @@ export default function DashboardPage() {
               {editOpenError && (
                 <div
                   role="alert"
-                  className="m-5 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700"
+                  className="m-5 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/50 dark:text-red-300"
                 >
                   {editOpenError}
                 </div>
@@ -361,30 +407,33 @@ export default function DashboardPage() {
             </>
           )}
 
+          {/* Paginação */}
           {!incidentsQuery.isPending && !incidentsQuery.isError && (
-            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 p-5 text-sm">
-              <p className="text-slate-500">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 p-5 text-sm dark:border-slate-800">
+              <p className="text-slate-500 dark:text-slate-400">
                 {result?.total ?? 0} incidentes encontrados
                 {incidentsQuery.isFetching ? " · Atualizando..." : ""}
               </p>
 
               <div className="flex items-center gap-3">
                 <button
+                  type="button"
                   disabled={page <= 1 || incidentsQuery.isFetching}
                   onClick={() => setPage((current) => Math.max(1, current - 1))}
-                  className="rounded-lg border px-4 py-1.5 text-sm disabled:cursor-not-allowed disabled:opacity-40"
+                  className="rounded-lg border border-slate-300 px-4 py-1.5 text-sm transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:hover:bg-slate-800"
                 >
                   Anterior
                 </button>
 
-                <span>
+                <span className="text-slate-600 dark:text-slate-300">
                   Página {page} de {Math.max(totalPages, 1)}
                 </span>
 
                 <button
+                  type="button"
                   disabled={page >= totalPages || incidentsQuery.isFetching}
                   onClick={() => setPage((current) => current + 1)}
-                  className="rounded-lg border px-4 py-1.5 text-sm disabled:cursor-not-allowed disabled:opacity-40"
+                  className="rounded-lg border border-slate-300 px-4 py-1.5 text-sm transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:hover:bg-slate-800"
                 >
                   Próxima
                 </button>
@@ -394,9 +443,10 @@ export default function DashboardPage() {
         </section>
       </main>
 
+      {/* Modal de detalhes */}
       {selectedIncident && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
           onMouseDown={(event) => {
             if (event.target === event.currentTarget) {
               setSelectedIncident(null);
@@ -407,21 +457,24 @@ export default function DashboardPage() {
             role="dialog"
             aria-modal="true"
             aria-labelledby="incident-dialog-title"
-            className="w-full max-w-xl rounded-xl bg-white p-6 shadow-xl"
+            className="w-full max-w-xl rounded-xl bg-white p-6 text-slate-900 shadow-xl dark:border dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
           >
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h2 id="incident-dialog-title" className="text-xl font-bold">
                   {selectedIncident.title}
                 </h2>
-                <p className="mt-1 text-sm text-slate-500">
+
+                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                   Incidente #{selectedIncident.id}
                 </p>
               </div>
+
               <button
+                type="button"
                 aria-label="Fechar detalhes"
                 onClick={() => setSelectedIncident(null)}
-                className="rounded-lg p-2 hover:bg-slate-100"
+                className="rounded-lg p-2 hover:bg-slate-100 dark:hover:bg-slate-800"
               >
                 <X size={20} />
               </button>
@@ -429,33 +482,56 @@ export default function DashboardPage() {
 
             <dl className="mt-6 grid grid-cols-2 gap-4 text-sm">
               <div>
-                <dt className="text-slate-500">Criticidade</dt>
+                <dt className="text-slate-500 dark:text-slate-400">
+                  Criticidade
+                </dt>
                 <dd className="font-medium">{selectedIncident.severity}</dd>
               </div>
+
               <div>
-                <dt className="text-slate-500">Status</dt>
+                <dt className="text-slate-500 dark:text-slate-400">Status</dt>
                 <dd className="font-medium">{selectedIncident.status}</dd>
               </div>
+
               <div>
-                <dt className="text-slate-500">Categoria</dt>
+                <dt className="text-slate-500 dark:text-slate-400">
+                  Categoria
+                </dt>
                 <dd className="font-medium">{selectedIncident.category}</dd>
               </div>
+
               <div>
-                <dt className="text-slate-500">Veículo</dt>
+                <dt className="text-slate-500 dark:text-slate-400">Veículo</dt>
                 <dd className="font-medium">
                   {selectedIncident.truck_id ?? "Não informado"}
                 </dd>
               </div>
+
               <div className="col-span-2">
-                <dt className="text-slate-500">Localização</dt>
+                <dt className="text-slate-500 dark:text-slate-400">
+                  Localização
+                </dt>
                 <dd className="font-medium">
                   {selectedIncident.location ?? "Não informada"}
                 </dd>
               </div>
+
               <div className="col-span-2">
-                <dt className="text-slate-500">Descrição</dt>
+                <dt className="text-slate-500 dark:text-slate-400">
+                  Descrição
+                </dt>
                 <dd className="mt-1 whitespace-pre-wrap">
                   {selectedIncident.description}
+                </dd>
+              </div>
+
+              <div className="col-span-2 border-t border-slate-200 pt-3 dark:border-slate-700">
+                <dt className="text-slate-500 dark:text-slate-400">
+                  Última atualização
+                </dt>
+
+                <dd className="font-medium">
+                  {selectedIncident.updated_by ?? "Não informado"}
                 </dd>
               </div>
             </dl>
@@ -463,6 +539,7 @@ export default function DashboardPage() {
         </div>
       )}
 
+      {/* Modal de cadastro */}
       {isCreateModalOpen && (
         <IncidentCreateModal
           onClose={() => setIsCreateModalOpen(false)}
@@ -473,6 +550,7 @@ export default function DashboardPage() {
         />
       )}
 
+      {/* Modal de edição */}
       {editingIncident && (
         <IncidentEditModal
           key={editingIncident.id}
@@ -485,6 +563,7 @@ export default function DashboardPage() {
         />
       )}
 
+      {/* Modal de exclusão */}
       {deletingIncident && (
         <IncidentDeleteModal
           key={deletingIncident.id}

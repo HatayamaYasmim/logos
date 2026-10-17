@@ -34,22 +34,33 @@ export function IncidentForm({
     key: K,
     value: IncidentFormValues[K],
   ) {
-    onChange({ ...values, [key]: value });
+    onChange({
+      ...values,
+      [key]: value,
+    });
   }
 
   const inputClass =
     "w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm " +
-    "outline-none focus:border-blue-600 disabled:opacity-60";
+    "text-slate-900 outline-none transition-colors " +
+    "placeholder:text-slate-400 " +
+    "focus:border-blue-600 focus:ring-2 focus:ring-blue-100 " +
+    "disabled:cursor-not-allowed disabled:opacity-60 " +
+    "dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 " +
+    "dark:placeholder:text-slate-500 " +
+    "dark:focus:border-blue-400 dark:focus:ring-blue-500/20";
 
   return (
     <div className="space-y-5">
+      {/* Título */}
       <div>
         <label
           htmlFor="incident-title"
-          className="mb-2 block text-sm font-medium"
+          className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200"
         >
           Título *
         </label>
+
         <input
           id="incident-title"
           required
@@ -62,13 +73,15 @@ export function IncidentForm({
         />
       </div>
 
+      {/* Descrição */}
       <div>
         <label
           htmlFor="incident-description"
-          className="mb-2 block text-sm font-medium"
+          className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200"
         >
           Descrição *
         </label>
+
         <textarea
           id="incident-description"
           required
@@ -78,18 +91,20 @@ export function IncidentForm({
           disabled={disabled}
           value={values.description}
           onChange={(event) => change("description", event.target.value)}
-          className={inputClass}
+          className={`${inputClass} resize-y`}
         />
       </div>
 
+      {/* Categoria e criticidade */}
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <label
             htmlFor="incident-category"
-            className="mb-2 block text-sm font-medium"
+            className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200"
           >
             Categoria *
           </label>
+
           <select
             id="incident-category"
             value={values.category}
@@ -110,10 +125,11 @@ export function IncidentForm({
         <div>
           <label
             htmlFor="incident-severity"
-            className="mb-2 block text-sm font-medium"
+            className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200"
           >
             Criticidade *
           </label>
+
           <select
             id="incident-severity"
             value={values.severity}
@@ -132,14 +148,16 @@ export function IncidentForm({
         </div>
       </div>
 
+      {/* Veículo e localização */}
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <label
             htmlFor="incident-truck"
-            className="mb-2 block text-sm font-medium"
+            className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200"
           >
             Identificação do veículo
           </label>
+
           <input
             id="incident-truck"
             maxLength={50}
@@ -153,10 +171,11 @@ export function IncidentForm({
         <div>
           <label
             htmlFor="incident-location"
-            className="mb-2 block text-sm font-medium"
+            className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200"
           >
             Localização
           </label>
+
           <input
             id="incident-location"
             maxLength={255}

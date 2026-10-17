@@ -7,11 +7,11 @@ import {
   Trash2,
   X,
 } from "lucide-react";
+import { toast } from "sonner";
 
 import { ApiError } from "../../services/api";
 import { deleteIncident, getIncident } from "../../services/incidents";
 import type { Incident } from "../../types/incident";
-import { toast } from "sonner";
 
 interface IncidentDeleteModalProps {
   incident: Incident;
@@ -63,7 +63,7 @@ export function IncidentDeleteModal({
         await refreshQueries();
       }
 
-      // Os demais erros são exibidos pelo próprio modal.
+      // Os demais erros são exibidos no modal.
     },
   });
 
@@ -105,24 +105,25 @@ export function IncidentDeleteModal({
       : null;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 px-4 py-6">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 px-4 py-6">
       <div className="flex min-h-full items-center justify-center">
         <div
           role="alertdialog"
           aria-modal="true"
           aria-labelledby="delete-incident-title"
           aria-describedby="delete-incident-description"
-          className="w-full max-w-lg rounded-2xl bg-white p-5 shadow-xl"
+          className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-5 text-slate-900 shadow-xl transition-colors dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
         >
+          {/* Cabeçalho */}
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className="rounded-full bg-red-100 p-2 text-red-700">
+              <div className="rounded-full bg-red-100 p-2 text-red-700 dark:bg-red-950/60 dark:text-red-400">
                 <AlertTriangle size={22} />
               </div>
 
               <h2
                 id="delete-incident-title"
-                className="text-lg font-semibold text-slate-900"
+                className="text-lg font-semibold text-slate-900 dark:text-slate-100"
               >
                 Excluir incidente?
               </h2>
@@ -133,7 +134,7 @@ export function IncidentDeleteModal({
               aria-label="Fechar confirmação"
               onClick={onClose}
               disabled={isBusy}
-              className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 disabled:opacity-50"
+              className="rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-slate-100 disabled:opacity-50 dark:text-slate-400 dark:hover:bg-slate-800"
             >
               <X size={18} />
             </button>
@@ -141,18 +142,19 @@ export function IncidentDeleteModal({
 
           <p
             id="delete-incident-description"
-            className="mt-4 text-sm text-slate-600"
+            className="mt-4 text-sm text-slate-600 dark:text-slate-300"
           >
             Você está prestes a excluir o incidente abaixo. Essa operação não
             poderá ser desfeita.
           </p>
 
-          <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3">
-            <p className="text-sm font-semibold text-slate-900">
+          {/* Resumo do incidente */}
+          <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/60">
+            <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
               #{currentIncident.id} — {currentIncident.title}
             </p>
 
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
               Status: {currentIncident.status}
               {" · "}
               Criticidade: {currentIncident.severity}
@@ -161,10 +163,11 @@ export function IncidentDeleteModal({
             </p>
           </div>
 
+          {/* Conflito de concorrência */}
           {conflict && (
             <div
               role="alert"
-              className="mt-4 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900"
+              className="mt-4 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200"
             >
               <p>
                 Este incidente foi alterado por outro analista. A exclusão não
@@ -175,39 +178,45 @@ export function IncidentDeleteModal({
                 type="button"
                 onClick={() => void reloadIncident()}
                 disabled={isBusy}
-                className="mt-3 flex items-center gap-2 rounded-lg bg-amber-900 px-4 py-1.5 text-sm font-medium text-white disabled:opacity-50"
+                className="mt-3 flex items-center gap-2 rounded-lg bg-amber-900 px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-amber-800 disabled:opacity-50 dark:bg-amber-700 dark:hover:bg-amber-600"
               >
-                <RefreshCw size={15} />
+                <RefreshCw
+                  size={15}
+                  className={reloading ? "animate-spin" : ""}
+                />
                 {reloading ? "Recarregando..." : "Recarregar incidente"}
               </button>
             </div>
           )}
 
+          {/* Incidente não encontrado */}
           {notFound && (
             <p
               role="alert"
-              className="mt-4 rounded-lg bg-amber-50 p-3 text-sm text-amber-900"
+              className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200"
             >
               Este incidente já foi excluído ou não existe mais. A listagem foi
               atualizada.
             </p>
           )}
 
+          {/* Outros erros */}
           {(genericError || reloadError) && (
             <p
               role="alert"
-              className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700"
+              className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300"
             >
               {genericError || reloadError}
             </p>
           )}
 
-          <div className="mt-5 flex justify-end gap-3 border-t border-slate-100 pt-4">
+          {/* Ações */}
+          <div className="mt-5 flex flex-wrap justify-end gap-3 border-t border-slate-100 pt-4 dark:border-slate-700">
             <button
               type="button"
               onClick={onClose}
               disabled={isBusy}
-              className="rounded-lg border border-slate-300 px-4 py-1.5 text-sm font-medium hover:bg-slate-50 disabled:opacity-50"
+              className="rounded-lg border border-slate-300 px-4 py-1.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800"
             >
               {notFound ? "Fechar" : "Cancelar"}
             </button>
@@ -217,7 +226,7 @@ export function IncidentDeleteModal({
                 type="button"
                 disabled={isBusy || conflict}
                 onClick={() => mutation.mutate()}
-                className="flex items-center gap-2 rounded-lg bg-red-700 px-4 py-1.5 text-sm font-medium text-white hover:bg-red-800 disabled:opacity-50"
+                className="flex items-center gap-2 rounded-lg bg-red-700 px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-red-600 dark:hover:bg-red-500"
               >
                 {mutation.isPending ? (
                   <LoaderCircle size={16} className="animate-spin" />
