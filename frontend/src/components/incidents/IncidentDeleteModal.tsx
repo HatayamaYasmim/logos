@@ -11,6 +11,7 @@ import {
 import { ApiError } from "../../services/api";
 import { deleteIncident, getIncident } from "../../services/incidents";
 import type { Incident } from "../../types/incident";
+import { toast } from "sonner";
 
 interface IncidentDeleteModalProps {
   incident: Incident;
@@ -46,20 +47,23 @@ export function IncidentDeleteModal({
       deleteIncident(currentIncident.id, currentIncident.version),
 
     onSuccess: async () => {
+      toast.success("Incidente excluído com sucesso!");
+
       await refreshQueries();
       onDeleted();
     },
 
     onError: async (error) => {
-      if (error instanceof ApiError) {
-        if (error.status === 409) {
-          setConflict(true);
-        }
-
-        if (error.status === 404) {
-          await refreshQueries();
-        }
+      if (error instanceof ApiError && error.status === 409) {
+        setConflict(true);
+        return;
       }
+
+      if (error instanceof ApiError && error.status === 404) {
+        await refreshQueries();
+      }
+
+      // Os demais erros são exibidos pelo próprio modal.
     },
   });
 

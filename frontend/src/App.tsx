@@ -5,11 +5,13 @@ import { AuthProvider } from "./contexts/AuthContext";
 import DashboardPage from "./pages/DashboardPage";
 import LoginPage from "./pages/LoginPage";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { Toaster } from "sonner";
 
 export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        <Toaster position="top-center" richColors closeButton duration={3000} />
         <Routes>
           <Route path="/login" element={<LoginPage />} />
 

@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { AlertCircle, LoaderCircle, X } from "lucide-react";
+import { toast } from "sonner";
 
 import { ApiError } from "../../services/api";
 import {
@@ -9,7 +10,11 @@ import {
   updateIncidentStatus,
 } from "../../services/incidents";
 
-import type { Incident, IncidentStatus, UpdateIncidentPayload } from "../../types/incident";
+import type {
+  Incident,
+  IncidentStatus,
+  UpdateIncidentPayload,
+} from "../../types/incident";
 import { IncidentForm, type IncidentFormValues } from "./IncidentForm";
 
 interface IncidentEditModalProps {
@@ -77,6 +82,8 @@ export function IncidentEditModal({
       updateIncident(incident.id, payload),
 
     onSuccess: async () => {
+      toast.success("Incidente atualizado com sucesso!");
+
       await refreshQueries();
       onUpdated();
     },
@@ -97,6 +104,8 @@ export function IncidentEditModal({
       setVersion(updated.version);
       setCurrentStatus(updated.status);
       setSelectedStatus(updated.status);
+
+      toast.success("Status atualizado com sucesso!");
 
       await refreshQueries();
     },
@@ -283,12 +292,6 @@ export function IncidentEditModal({
                     : "Atualizar status"}
                 </button>
               </div>
-
-              {statusMutation.isSuccess && (
-                <p role="status" className="mt-3 text-sm text-green-700">
-                  Status atualizado com sucesso.
-                </p>
-              )}
 
               {statusError && (
                 <p role="alert" className="mt-3 text-sm text-red-700">

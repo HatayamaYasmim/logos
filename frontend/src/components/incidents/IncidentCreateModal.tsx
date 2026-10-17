@@ -1,18 +1,13 @@
-
 import { useState, type FormEvent } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { AlertCircle, LoaderCircle, X } from "lucide-react";
 
 import { ApiError } from "../../services/api";
-import {
-  createIncident,
-} from "../../services/incidents";
+import { createIncident } from "../../services/incidents";
 
-import {
-  IncidentForm,
-  type IncidentFormValues,
-} from "./IncidentForm";
+import { IncidentForm, type IncidentFormValues } from "./IncidentForm";
 import type { CreateIncidentPayload } from "../../types/incident";
+import { toast } from "sonner";
 
 interface IncidentCreateModalProps {
   onClose: () => void;
@@ -42,6 +37,8 @@ export function IncidentCreateModal({
     mutationFn: createIncident,
 
     onSuccess: async () => {
+      toast.success("Incidente cadastrado com sucesso!");
+
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: ["incidents"],
@@ -82,10 +79,7 @@ export function IncidentCreateModal({
     <div
       className="fixed inset-0 z-50 overflow-y-auto bg-black/50 px-4 py-6"
       onMouseDown={(event) => {
-        if (
-          event.target === event.currentTarget &&
-          !mutation.isPending
-        ) {
+        if (event.target === event.currentTarget && !mutation.isPending) {
           onClose();
         }
       }}
@@ -124,10 +118,7 @@ export function IncidentCreateModal({
           </div>
 
           {/* Formulário */}
-          <form
-            onSubmit={handleSubmit}
-            className="space-y-5"
-          >
+          <form onSubmit={handleSubmit} className="space-y-5">
             <IncidentForm
               values={values}
               onChange={setValues}
@@ -140,10 +131,7 @@ export function IncidentCreateModal({
                 role="alert"
                 className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700"
               >
-                <AlertCircle
-                  size={18}
-                  className="shrink-0"
-                />
+                <AlertCircle size={18} className="shrink-0" />
                 <span>{errorMessage}</span>
               </div>
             )}
@@ -165,15 +153,10 @@ export function IncidentCreateModal({
                 className="flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-1.5 text-sm font-medium text-white hover:bg-blue-800 disabled:opacity-60"
               >
                 {mutation.isPending && (
-                  <LoaderCircle
-                    size={16}
-                    className="animate-spin"
-                  />
+                  <LoaderCircle size={16} className="animate-spin" />
                 )}
 
-                {mutation.isPending
-                  ? "Salvando..."
-                  : "Cadastrar incidente"}
+                {mutation.isPending ? "Salvando..." : "Cadastrar incidente"}
               </button>
             </div>
           </form>

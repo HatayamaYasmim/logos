@@ -17,6 +17,7 @@ import { IncidentTable } from "../components/incidents/IncidentTable";
 
 import { ApiError, apiRequest } from "../services/api";
 import { getIncident, getIncidents } from "../services/incidents";
+import { toast } from "sonner";
 
 import type {
   Incident,
@@ -90,9 +91,24 @@ export default function DashboardPage() {
 
   const changeFilters = () => setPage(1);
 
-  function refreshData() {
-    void statsQuery.refetch();
-    void incidentsQuery.refetch();
+  async function refreshData() {
+    const toastId = toast.loading("Atualizando dados...");
+
+    const [statsResult, incidentsResult] = await Promise.all([
+      statsQuery.refetch(),
+      incidentsQuery.refetch(),
+    ]);
+
+    if (statsResult.isError || incidentsResult.isError) {
+      toast.error("Não foi possível atualizar os dados.", {
+        id: toastId,
+      });
+      return;
+    }
+
+    toast.success("Dados atualizados com sucesso!", {
+      id: toastId,
+    });
   }
 
   async function openEdit(incident: Incident) {
@@ -131,10 +147,18 @@ export default function DashboardPage() {
 
           <button
             type="button"
-            onClick={refreshData}
-            className="flex items-center gap-2 rounded-lg border border-slate-200 px-4 py-1.5 text-sm hover:bg-slate-50"
+            onClick={() => void refreshData()}
+            disabled={statsQuery.isFetching || incidentsQuery.isFetching}
+            className="flex items-center gap-2 rounded-lg border border-slate-200 px-4 py-1.5 text-sm hover:bg-slate-50 disabled:opacity-50"
           >
-            <RefreshCw size={16} />
+            <RefreshCw
+              size={16}
+              className={
+                statsQuery.isFetching || incidentsQuery.isFetching
+                  ? "animate-spin"
+                  : ""
+              }
+            />
             Atualizar
           </button>
 
