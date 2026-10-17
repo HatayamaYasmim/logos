@@ -2,18 +2,13 @@ import { apiRequest } from "./api";
 import type {
   Incident,
   IncidentPage,
-  IncidentCategory,
-  IncidentSeverity,
   IncidentStatus,
+  CreateIncidentPayload,
+  IncidentFilters,
+  UpdateIncidentPayload,
 } from "../types/incident";
 
-export interface IncidentFilters {
-  severity?: IncidentSeverity;
-  category?: IncidentCategory;
-  status?: IncidentStatus;
-  skip: number;
-  limit: number;
-}
+
 
 export async function getIncidents(
   filters: IncidentFilters,
@@ -40,4 +35,37 @@ export async function getIncidents(
 
 export async function getIncident(id: number): Promise<Incident> {
   return apiRequest<Incident>(`/incidents/${id}`);
+}
+
+export async function createIncident(
+  data: CreateIncidentPayload,
+): Promise<Incident> {
+  return apiRequest<Incident>("/incidents", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+
+
+export async function updateIncident(
+  id: number,
+  data: UpdateIncidentPayload,
+): Promise<Incident> {
+  return apiRequest<Incident>(`/incidents/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+}
+
+
+export async function updateIncidentStatus(
+  id: number,
+  status: IncidentStatus,
+  version: number,
+): Promise<Incident> {
+  return apiRequest<Incident>(`/incidents/${id}/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ status, version }),
+  });
 }

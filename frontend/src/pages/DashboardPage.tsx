@@ -1,19 +1,22 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
-  AlertTriangle,
   Activity,
+  AlertTriangle,
   ClipboardList,
+  LogOut,
+  Plus,
   RefreshCw,
   X,
 } from "lucide-react";
 
-import { apiRequest } from "../services/api";
-import { getIncidents } from "../services/incidents";
+import { useAuth } from "../contexts/auth-context";
+import { IncidentCreateModal } from "../components/incidents/IncidentCreateModal";
+import { IncidentEditModal } from "../components/incidents/IncidentEditModal";
 import { IncidentTable } from "../components/incidents/IncidentTable";
 
-import { LogOut } from "lucide-react";
-import { useAuth } from "../contexts/auth-context";
+import { ApiError, apiRequest } from "../services/api";
+import { getIncident, getIncidents } from "../services/incidents";
 
 import type {
   Incident,
@@ -52,6 +55,12 @@ export default function DashboardPage() {
     null,
   );
 
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [editingIncident, setEditingIncident] = useState<Incident | null>(null);
+
+  const [editOpenError, setEditOpenError] = useState("");
+  const [openingEditId, setOpeningEditId] = useState<number | null>(null);
+
   const skip = (page - 1) * PAGE_SIZE;
 
   const statsQuery = useQuery({
@@ -82,6 +91,28 @@ export default function DashboardPage() {
     void incidentsQuery.refetch();
   }
 
+  async function openEdit(incident: Incident) {
+    if (openingEditId !== null) return;
+
+    setOpeningEditId(incident.id);
+    setEditOpenError("");
+
+    try {
+      const latest = await getIncident(incident.id);
+
+      setEditingIncident(latest);
+      setSelectedIncident(null);
+    } catch (error) {
+      setEditOpenError(
+        error instanceof ApiError
+          ? error.message
+          : "Não foi possível carregar o incidente atualizado.",
+      );
+    } finally {
+      setOpeningEditId(null);
+    }
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <header className="border-b border-slate-200 bg-white">
@@ -97,7 +128,7 @@ export default function DashboardPage() {
           <button
             type="button"
             onClick={refreshData}
-            className="flex items-center gap-2 rounded-lg border border-slate-200 px-4 py-2 text-sm hover:bg-slate-50"
+            className="flex items-center gap-2 rounded-lg border border-slate-200 px-4 py-1.5 text-sm hover:bg-slate-50"
           >
             <RefreshCw size={16} />
             Atualizar
@@ -106,7 +137,7 @@ export default function DashboardPage() {
           <button
             type="button"
             onClick={logout}
-            className="flex items-center gap-2 rounded-lg border border-red-200 px-4 py-2 text-sm text-red-700 transition-colors hover:bg-red-50"
+            className="flex items-center gap-2 rounded-lg border border-red-200 px-4 py-1.5 text-sm text-red-700 transition-colors hover:bg-red-50"
           >
             <LogOut size={16} />
             Sair
@@ -177,10 +208,25 @@ export default function DashboardPage() {
 
         <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
           <div className="border-b border-slate-200 p-5">
-            <h2 className="text-lg font-semibold">Incidentes em operação</h2>
-            <p className="mt-1 text-sm text-slate-500">
-              Filtre e acompanhe os registros da frota.
-            </p>
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-semibold">
+                  Incidentes em operação
+                </h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  Filtre e acompanhe os registros da frota.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsCreateModalOpen(true)}
+                className="flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-blue-800"
+              >
+                <Plus size={18} />
+                Novo incidente
+              </button>
+            </div>
 
             <div className="mt-5 grid gap-3 md:grid-cols-3">
               <label className="flex flex-col gap-2 text-sm">
@@ -192,7 +238,7 @@ export default function DashboardPage() {
                     setSeverity(event.target.value as IncidentSeverity | "");
                     changeFilters();
                   }}
-                  className="rounded-lg border border-slate-300 bg-white px-3 py-2"
+                 className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm"
                 >
                   <option value="">Todas</option>
                   {severities.map((item) => (
@@ -212,7 +258,7 @@ export default function DashboardPage() {
                     setCategory(event.target.value as IncidentCategory | "");
                     changeFilters();
                   }}
-                  className="rounded-lg border border-slate-300 bg-white px-3 py-2"
+                 className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm"
                 >
                   <option value="">Todas</option>
                   {categories.map((item) => (
@@ -232,7 +278,7 @@ export default function DashboardPage() {
                     setStatus(event.target.value as IncidentStatus | "");
                     changeFilters();
                   }}
-                  className="rounded-lg border border-slate-300 bg-white px-3 py-2"
+                  className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm"
                 >
                   <option value="">Todos</option>
                   {statuses.map((item) => (
@@ -251,18 +297,37 @@ export default function DashboardPage() {
                 Não foi possível carregar os incidentes.
               </p>
               <button
+                type="button"
                 onClick={() => void incidentsQuery.refetch()}
-                className="mt-3 rounded-lg bg-blue-700 px-4 py-2 text-white"
+                className="mt-3 rounded-lg bg-blue-700 px-4 py-1.5 text-sm text-white"
               >
                 Tentar novamente
               </button>
             </div>
           ) : (
-            <IncidentTable
-              incidents={result?.items ?? []}
-              isLoading={incidentsQuery.isPending}
-              onSelect={setSelectedIncident}
-            />
+            <>
+              {editOpenError && (
+                <div
+                  role="alert"
+                  className="m-5 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700"
+                >
+                  {editOpenError}
+                </div>
+              )}
+
+              <IncidentTable
+                incidents={result?.items ?? []}
+                isLoading={incidentsQuery.isPending}
+                onSelect={(incident) => {
+                  setEditOpenError("");
+                  setSelectedIncident(incident);
+                }}
+                onEdit={(incident) => {
+                  void openEdit(incident);
+                }}
+                editingIncidentId={openingEditId}
+              />
+            </>
           )}
 
           {!incidentsQuery.isPending && !incidentsQuery.isError && (
@@ -276,7 +341,7 @@ export default function DashboardPage() {
                 <button
                   disabled={page <= 1 || incidentsQuery.isFetching}
                   onClick={() => setPage((current) => Math.max(1, current - 1))}
-                  className="rounded-lg border px-3 py-2 disabled:cursor-not-allowed disabled:opacity-40"
+                  className="rounded-lg border px-4 py-1.5 text-sm disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   Anterior
                 </button>
@@ -288,7 +353,7 @@ export default function DashboardPage() {
                 <button
                   disabled={page >= totalPages || incidentsQuery.isFetching}
                   onClick={() => setPage((current) => current + 1)}
-                  className="rounded-lg border px-3 py-2 disabled:cursor-not-allowed disabled:opacity-40"
+                  className="rounded-lg border px-4 py-1.5 text-sm disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   Próxima
                 </button>
@@ -365,6 +430,28 @@ export default function DashboardPage() {
             </dl>
           </div>
         </div>
+      )}
+
+      {isCreateModalOpen && (
+        <IncidentCreateModal
+          onClose={() => setIsCreateModalOpen(false)}
+          onCreated={() => {
+            setIsCreateModalOpen(false);
+            setPage(1);
+          }}
+        />
+      )}
+
+      {editingIncident && (
+        <IncidentEditModal
+          key={editingIncident.id}
+          incident={editingIncident}
+          onClose={() => setEditingIncident(null)}
+          onUpdated={() => {
+            setEditingIncident(null);
+            setSelectedIncident(null);
+          }}
+        />
       )}
     </div>
   );

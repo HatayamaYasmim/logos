@@ -42,3 +42,31 @@ export interface IncidentStats {
   by_severity: Record<IncidentSeverity, number>;
   by_status: Record<IncidentStatus, number>;
 }
+
+
+export interface UpdateIncidentPayload {
+  title: string;
+  description: string;
+  category: IncidentCategory;
+  severity: IncidentSeverity;
+  truck_id: string | null;
+  location: string | null;
+  version: number;
+}
+
+export interface CreateIncidentPayload {
+  title: string;
+  description: string;
+  category: IncidentCategory;
+  severity: IncidentSeverity;
+  truck_id: string | null;
+  location: string | null;
+}
+
+export interface IncidentFilters {
+  severity?: IncidentSeverity;
+  category?: IncidentCategory;
+  status?: IncidentStatus;
+  skip: number;
+  limit: number;
+}

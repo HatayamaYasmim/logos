@@ -1,14 +1,12 @@
-
-import { AlertCircle, Inbox } from "lucide-react";
-import type {
-  Incident,
-  IncidentSeverity,
-} from "../../types/incident";
+import { AlertCircle, Eye, Inbox, Pencil } from "lucide-react";
+import type { Incident, IncidentSeverity } from "../../types/incident";
 
 interface IncidentTableProps {
   incidents: Incident[];
   isLoading: boolean;
   onSelect: (incident: Incident) => void;
+  onEdit: (incident: Incident) => void;
+  editingIncidentId?: number | null;
 }
 
 const severityStyles: Record<IncidentSeverity, string> = {
@@ -29,13 +27,12 @@ export function IncidentTable({
   incidents,
   isLoading,
   onSelect,
+  onEdit,
+  editingIncidentId,
 }: IncidentTableProps) {
   if (isLoading) {
     return (
-      <div
-        role="status"
-        className="p-10 text-center text-slate-500"
-      >
+      <div role="status" className="p-10 text-center text-slate-500">
         Carregando incidentes...
       </div>
     );
@@ -60,21 +57,30 @@ export function IncidentTable({
       <table className="w-full text-left text-sm">
         <thead className="bg-slate-50 text-xs uppercase text-slate-500">
           <tr>
-            <th scope="col" className="px-5 py-4">Incidente</th>
-            <th scope="col" className="px-5 py-4">Categoria</th>
-            <th scope="col" className="px-5 py-4">Criticidade</th>
-            <th scope="col" className="px-5 py-4">Status</th>
-            <th scope="col" className="px-5 py-4">Abertura</th>
-            <th scope="col" className="px-5 py-4">Ação</th>
+            <th scope="col" className="px-5 py-4">
+              Incidente
+            </th>
+            <th scope="col" className="px-5 py-4">
+              Categoria
+            </th>
+            <th scope="col" className="px-5 py-4">
+              Criticidade
+            </th>
+            <th scope="col" className="px-5 py-4">
+              Status
+            </th>
+            <th scope="col" className="px-5 py-4">
+              Abertura
+            </th>
+            <th scope="col" className="px-5 py-4">
+              Ação
+            </th>
           </tr>
         </thead>
 
         <tbody className="divide-y divide-slate-100">
           {incidents.map((incident) => (
-            <tr
-              key={incident.id}
-              className="hover:bg-slate-50"
-            >
+            <tr key={incident.id} className="hover:bg-slate-50">
               <td className="px-5 py-4">
                 <div className="flex items-start gap-2">
                   {incident.severity === "Alta" && (
@@ -96,9 +102,7 @@ export function IncidentTable({
                 </div>
               </td>
 
-              <td className="px-5 py-4 text-slate-600">
-                {incident.category}
-              </td>
+              <td className="px-5 py-4 text-slate-600">{incident.category}</td>
 
               <td className="px-5 py-4">
                 <span
@@ -108,22 +112,37 @@ export function IncidentTable({
                 </span>
               </td>
 
-              <td className="px-5 py-4 text-slate-700">
-                {incident.status}
-              </td>
+              <td className="px-5 py-4 text-slate-700">{incident.status}</td>
 
               <td className="whitespace-nowrap px-5 py-4 text-slate-500">
                 {formatDate(incident.created_at)}
               </td>
 
               <td className="px-5 py-4">
-                <button
-                  type="button"
-                  onClick={() => onSelect(incident)}
-                  className="font-medium text-blue-700 hover:underline"
-                >
-                  Detalhes
-                </button>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => onSelect(incident)}
+                    className="flex items-center gap-1.5 font-medium text-blue-700 hover:underline"
+                    title="Visualizar incidente"
+                  >
+                    <Eye size={15} />
+                    Detalhes
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={editingIncidentId === incident.id}
+                    onClick={() => onEdit(incident)}
+                    className="flex items-center gap-1.5 font-medium text-slate-700 hover:text-blue-700 disabled:cursor-wait disabled:opacity-50"
+                    title="Editar incidente"
+                  >
+                    <Pencil size={15} />
+                    {editingIncidentId === incident.id
+                      ? "Abrindo..."
+                      : "Editar"}
+                  </button>
+                </div>
               </td>
             </tr>
           ))}
