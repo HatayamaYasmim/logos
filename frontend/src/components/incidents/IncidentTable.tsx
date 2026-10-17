@@ -1,4 +1,4 @@
-import { AlertCircle, Eye, Inbox, Pencil } from "lucide-react";
+import { AlertCircle, Eye, Inbox, Pencil, Trash2 } from "lucide-react";
 import type { Incident, IncidentSeverity } from "../../types/incident";
 
 interface IncidentTableProps {
@@ -6,6 +6,7 @@ interface IncidentTableProps {
   isLoading: boolean;
   onSelect: (incident: Incident) => void;
   onEdit: (incident: Incident) => void;
+  onDelete: (incident: Incident) => void;
   editingIncidentId?: number | null;
 }
 
@@ -28,6 +29,7 @@ export function IncidentTable({
   isLoading,
   onSelect,
   onEdit,
+  onDelete,
   editingIncidentId,
 }: IncidentTableProps) {
   if (isLoading) {
@@ -141,6 +143,16 @@ export function IncidentTable({
                     {editingIncidentId === incident.id
                       ? "Abrindo..."
                       : "Editar"}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => onDelete(incident)}
+                    className="flex items-center gap-1.5 font-medium text-red-700 hover:text-red-900"
+                    title="Excluir incidente"
+                  >
+                    <Trash2 size={15} />
+                    Excluir
                   </button>
                 </div>
               </td>

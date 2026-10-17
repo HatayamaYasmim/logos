@@ -8,8 +8,6 @@ import type {
   UpdateIncidentPayload,
 } from "../types/incident";
 
-
-
 export async function getIncidents(
   filters: IncidentFilters,
 ): Promise<IncidentPage> {
@@ -46,8 +44,6 @@ export async function createIncident(
   });
 }
 
-
-
 export async function updateIncident(
   id: number,
   data: UpdateIncidentPayload,
@@ -58,7 +54,6 @@ export async function updateIncident(
   });
 }
 
-
 export async function updateIncidentStatus(
   id: number,
   status: IncidentStatus,
@@ -67,5 +62,14 @@ export async function updateIncidentStatus(
   return apiRequest<Incident>(`/incidents/${id}/status`, {
     method: "PATCH",
     body: JSON.stringify({ status, version }),
+  });
+}
+
+export async function deleteIncident(
+  id: number,
+  version: number,
+): Promise<void> {
+  await apiRequest<void>(`/incidents/${id}?version=${version}`, {
+    method: "DELETE",
   });
 }

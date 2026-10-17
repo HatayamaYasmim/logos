@@ -25,6 +25,7 @@ import type {
   IncidentStats,
   IncidentStatus,
 } from "../types/incident";
+import { IncidentDeleteModal } from "../components/incidents/IncidentDeleteModal";
 
 const categories: IncidentCategory[] = [
   "Acidente com Veículo",
@@ -60,6 +61,9 @@ export default function DashboardPage() {
 
   const [editOpenError, setEditOpenError] = useState("");
   const [openingEditId, setOpeningEditId] = useState<number | null>(null);
+  const [deletingIncident, setDeletingIncident] = useState<Incident | null>(
+    null,
+  );
 
   const skip = (page - 1) * PAGE_SIZE;
 
@@ -238,7 +242,7 @@ export default function DashboardPage() {
                     setSeverity(event.target.value as IncidentSeverity | "");
                     changeFilters();
                   }}
-                 className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm"
+                  className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm"
                 >
                   <option value="">Todas</option>
                   {severities.map((item) => (
@@ -258,7 +262,7 @@ export default function DashboardPage() {
                     setCategory(event.target.value as IncidentCategory | "");
                     changeFilters();
                   }}
-                 className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm"
+                  className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm"
                 >
                   <option value="">Todas</option>
                   {categories.map((item) => (
@@ -326,6 +330,9 @@ export default function DashboardPage() {
                   void openEdit(incident);
                 }}
                 editingIncidentId={openingEditId}
+                onDelete={(incident) => {
+                  setDeletingIncident(incident);
+                }}
               />
             </>
           )}
@@ -450,6 +457,17 @@ export default function DashboardPage() {
           onUpdated={() => {
             setEditingIncident(null);
             setSelectedIncident(null);
+          }}
+        />
+      )}
+
+      {deletingIncident && (
+        <IncidentDeleteModal
+          key={deletingIncident.id}
+          incident={deletingIncident}
+          onClose={() => setDeletingIncident(null)}
+          onDeleted={() => {
+            setDeletingIncident(null);
           }}
         />
       )}
