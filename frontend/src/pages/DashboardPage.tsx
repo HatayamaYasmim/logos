@@ -232,16 +232,19 @@ export default function DashboardPage() {
                   label: "Total de incidentes",
                   value: stats?.total ?? 0,
                   icon: ClipboardList,
+                  color: "text-blue-600 dark:text-blue-400",
                 },
                 {
                   label: "Alta criticidade",
                   value: stats?.by_severity["Alta"] ?? 0,
                   icon: AlertTriangle,
+                  color: "text-red-600 dark:text-red-400",
                 },
                 {
                   label: "Em investigação",
                   value: stats?.by_status["Em Investigação"] ?? 0,
                   icon: Activity,
+                  color: "text-amber-600 dark:text-amber-400",
                 },
               ].map((item) => {
                 const Icon = item.icon;
@@ -258,7 +261,7 @@ export default function DashboardPage() {
 
                       <Icon
                         size={20}
-                        className="text-slate-500 dark:text-slate-400"
+                        className={item.color}
                       />
                     </div>
 
