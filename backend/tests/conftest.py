@@ -73,15 +73,14 @@ def client(prepare_test_database):
     )
 
     try:
-        with TestClient(app) as test_client:
+        with TestClient(
+            app,
+            headers={"Origin": "http://localhost:5173"},
+        ) as test_client:
             yield test_client
     finally:
         app.dependency_overrides.pop(
             get_current_user,
-            None,
-        )
-        app.dependency_overrides.pop(
-            get_db,
             None,
         )
 

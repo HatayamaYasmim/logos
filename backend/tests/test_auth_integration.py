@@ -280,7 +280,10 @@ def test_two_analysts_preserve_version_and_authorship(
     # Cada analista possui sua própria sessão/cookie.
     client_a = auth_client
 
-    with TestClient(app) as client_b:
+    with TestClient(
+        app,
+        headers={"Origin": "http://localhost:5173"},
+    ) as client_b:
         login_a = login(client_a, analyst_a.email)
         login_b = login(client_b, analyst_b.email)
 
