@@ -41,9 +41,12 @@ logos/
 │   │   ├── repositories/    # Acesso aos dados
 │   │   ├── schemas/         # Schemas de entrada e saída
 │   │   └── services/        # Regras de negócio
+│   ├── scripts/
+│   │   └── seed_demo.py     # Dados de demonstração
 │   ├── tests/
 │   ├── .env.example
-│   └── requirements.txt
+│   ├── requirements.txt
+│   └── start.sh
 ├── frontend/
 │   ├── src/
 │   ├── .env.example
@@ -99,6 +102,8 @@ JWT_ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=30
 COOKIE_SECURE=false
 CORS_ORIGINS=http://localhost:5173
+DEMO_SEED_ENABLED=false
+DEMO_DATABASE_NAME=logos_db
 ```
 
 > `COOKIE_SECURE=false` é exclusivo para desenvolvimento em HTTP. Em produção, utilize HTTPS e `COOKIE_SECURE=true`. Não versione o arquivo `.env`.
@@ -110,16 +115,53 @@ Ainda na pasta `backend`, execute:
 ```cmd
 alembic upgrade head
 ```
+### 5. Preparar os dados para avaliação
 
-### 5. Criar o primeiro analista
+O Logos oferece duas maneiras de iniciar a utilização: carregar dados fictícios de demonstração ou cadastrar manualmente um analista.
 
-A autenticação exige um usuário previamente cadastrado. Para criar um analista local, execute o comando abaixo no terminal do **backend**, com o ambiente virtual ativo. O comando solicita nome, e-mail e senha; a senha é armazenada como **hash Argon2**.
+#### Opção A — Utilizar os dados de demonstração (recomendado)
+
+O projeto disponibiliza um seed com **2 analistas e 15 incidentes fictícios**, distribuídos entre diferentes categorias, níveis de gravidade e status.
+
+No arquivo `backend/.env`, configure:
+
+```env
+DEMO_SEED_ENABLED=true
+DEMO_DATABASE_NAME=logos_db
+```
+
+Após aplicar as migrations, execute na pasta `backend`:
+
+```cmd
+python -m scripts.seed_demo
+```
+
+O comando cadastra os dados demonstrativos no PostgreSQL. Executá-lo novamente não duplica os registros que já existem.
+
+**Credenciais de demonstração**
+
+| Usuário | E-mail | Senha |
+|---|---|---|
+| Analista Demonstração | demo@logos.local | 123456789012 |
+| Analista Operacional | analista@logos.local | 123456789012 |
+
+Com essas contas, é possível acessar imediatamente o dashboard, visualizar indicadores, consultar os incidentes e testar as funcionalidades do sistema.
+
+> Os usuários, senhas e incidentes são exclusivos para desenvolvimento e demonstração. Não utilize essas credenciais em ambientes de produção reais.
+
+#### Opção B — Cadastrar um analista manualmente
+
+Caso prefira, você também pode criar seu próprio analista.
+
+Com o ambiente virtual ativo, execute na pasta `backend`:
 
 ```cmd
 python -c "from getpass import getpass; from app.database.session import SessionLocal; from app.models.user import User; from app.core.security import hash_password; db=SessionLocal(); name=input('Nome: '); email=input('Email: ').strip().lower(); password=getpass('Senha: '); db.add(User(name=name,email=email,password_hash=hash_password(password),is_active=True)); db.commit(); db.close(); print('Analista criado com sucesso.')"
 ```
 
-Use o e-mail e a senha informados para acessar o sistema. Esse comando deve ser executado apenas uma vez por usuário; o e-mail precisa ser único.
+O comando solicita nome, e-mail e senha. A senha é armazenada utilizando hash Argon2.
+
+O e-mail informado deve ser único.
 
 ### 6. Iniciar o backend
 
@@ -150,7 +192,7 @@ O frontend utiliza:
 VITE_API_URL=http://localhost:8000
 ```
 
-Acesse **http://localhost:5173** e entre com as credenciais do analista criado anteriormente.
+Acesse **http://localhost:5173** e entre com uma das contas de demonstração ou com as credenciais do analista cadastrado manualmente.
 
 > Utilize `localhost`, não `127.0.0.1`, para manter a configuração local de origem e cookies consistente.
 
