@@ -7,6 +7,7 @@ import {
   LogOut,
   Plus,
   RefreshCw,
+  Sparkles,
   X,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -28,6 +29,7 @@ import type {
   IncidentStats,
   IncidentStatus,
 } from "../types/incident";
+import { AiChat } from "../components/ai/AiChat";
 
 const categories: IncidentCategory[] = [
   "Acidente com Veículo",
@@ -76,6 +78,8 @@ export default function DashboardPage() {
 
   const [editOpenError, setEditOpenError] = useState("");
   const [openingEditId, setOpeningEditId] = useState<number | null>(null);
+
+  const [isAiChatOpen, setIsAiChatOpen] = useState(false);
 
   const skip = (page - 1) * PAGE_SIZE;
 
@@ -259,10 +263,7 @@ export default function DashboardPage() {
                         {item.label}
                       </p>
 
-                      <Icon
-                        size={20}
-                        className={item.color}
-                      />
+                      <Icon size={20} className={item.color} />
                     </div>
 
                     <p className="mt-5 text-3xl font-bold text-slate-900 dark:text-slate-100">
@@ -289,14 +290,25 @@ export default function DashboardPage() {
                 </p>
               </div>
 
-              <button
-                type="button"
-                onClick={() => setIsCreateModalOpen(true)}
-                className="flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-500"
-              >
-                <Plus size={18} />
-                Novo incidente
-              </button>
+              <div className="flex flex-nowrap items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsAiChatOpen(true)}
+                  className="flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-500"
+                >
+                  <Sparkles size={16} />
+                  Logos AI
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setIsCreateModalOpen(true)}
+                  className="flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-500"
+                >
+                  <Plus size={18} />
+                  Novo incidente
+                </button>
+              </div>
             </div>
 
             {/* Filtros */}
@@ -577,6 +589,8 @@ export default function DashboardPage() {
           }}
         />
       )}
+
+      <AiChat isOpen={isAiChatOpen} onClose={() => setIsAiChatOpen(false)} />
     </div>
   );
 }

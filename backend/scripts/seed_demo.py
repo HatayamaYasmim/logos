@@ -1,4 +1,3 @@
-
 import os
 from datetime import UTC, datetime, timedelta
 
@@ -197,7 +196,6 @@ DEMO_INCIDENTS = [
 ]
 
 
-
 def validate_environment():
     if os.getenv("DEMO_SEED_ENABLED", "").lower() != "true":
         raise RuntimeError(
@@ -222,13 +220,9 @@ def validate_environment():
         )
 
     if database_name == "logos_test":
-        raise RuntimeError(
-            "Seed bloqueado: não é permitido popular logos_test."
-        )
+        raise RuntimeError("Seed bloqueado: não é permitido popular logos_test.")
 
-    if not {"users", "incidents"}.issubset(
-        set(inspect(engine).get_table_names())
-    ):
+    if not {"users", "incidents"}.issubset(set(inspect(engine).get_table_names())):
         raise RuntimeError(
             "Tabelas não encontradas. Execute as migrations antes do seed."
         )
@@ -238,9 +232,7 @@ def seed_users(db):
     users_created = 0
 
     for user_data in DEMO_USERS:
-        existing = db.scalar(
-            select(User).where(User.email == user_data["email"])
-        )
+        existing = db.scalar(select(User).where(User.email == user_data["email"]))
 
         if existing is not None:
             continue
@@ -265,9 +257,7 @@ def seed_incidents(db):
 
     for index, data in enumerate(DEMO_INCIDENTS):
         existing = db.scalar(
-            select(Incident).where(
-                Incident.truck_id == data["truck_id"]
-            )
+            select(Incident).where(Incident.truck_id == data["truck_id"])
         )
 
         if existing is not None:
