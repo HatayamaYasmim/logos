@@ -32,6 +32,9 @@ router = APIRouter(
     tags=["Autenticação"],
 )
 
+def cookie_samesite() -> str:
+    return "none" if cookie_secure() else "lax"
+
 
 @router.post("/login")
 def login(
@@ -62,7 +65,7 @@ def login(
         max_age=expires_minutes * 60,
         httponly=True,
         secure=cookie_secure(),
-        samesite="lax",
+        samesite=cookie_samesite(),
         path="/",
     )
 
@@ -90,7 +93,7 @@ def logout(response: Response):
         path="/",
         secure=cookie_secure(),
         httponly=True,
-        samesite="lax",
+        samesite=cookie_samesite(),
     )
 
     return {"message": "Sessão encerrada."}
