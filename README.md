@@ -6,6 +6,7 @@ O sistema centraliza ocorrências, permite acompanhar sua gravidade e situação
 
 ## Demonstração online
 
+- Vídeo de apresentação: https://www.youtube.com/watch?v=LVyTLheiAuM
 - Aplicação: https://logos-8c71.onrender.com
 - API (Swagger): https://logos-api-9utr.onrender.com/docs
 - Health check: https://logos-api-9utr.onrender.com/health
