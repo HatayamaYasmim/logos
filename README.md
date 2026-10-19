@@ -4,8 +4,27 @@ Aplicação full stack para registrar, acompanhar e gerenciar incidentes em oper
 
 O sistema centraliza ocorrências, permite acompanhar sua gravidade e situação e oferece indicadores para auxiliar a triagem operacional.
 
+## Demonstração online
+
+- Aplicação: https://logos-8c71.onrender.com
+- API (Swagger): https://logos-api-9utr.onrender.com/docs
+- Health check: https://logos-api-9utr.onrender.com/health
+
+O projeto está hospedado no Render, utilizando serviços gratuitos.
+O backend pode levar alguns instantes para iniciar após
+um período de inatividade.
+
+### Credenciais de demonstração
+
+E-mail: demo@logos.local
+Senha: 123456789012
+
+Os dados disponibilizados são fictícios e destinados
+exclusivamente à avaliação técnica.
+
 ## Funcionalidades
 
+- Copiloto conversacional com IA para consultar incidentes, analisar ocorrências e sugerir ações operacionais.
 - Autenticação de analistas com sessões por cookie `HttpOnly`.
 - Cadastro, consulta, edição e exclusão de incidentes.
 - Atualização do status das ocorrências.
@@ -26,6 +45,8 @@ O sistema centraliza ocorrências, permite acompanhar sua gravidade e situação
 | Banco de dados | PostgreSQL 17 (Docker Compose) |
 | Autenticação | JWT assinado com HS256, Argon2, cookie `HttpOnly` e token CSRF |
 | Qualidade | Pytest, Ruff e ESLint |
+| Inteligência Artificial | OpenRouter, LLMs com tool calling e agente com ferramentas de consulta |
+| Deploy | Render (Static Site, Web Service e PostgreSQL) |
 
 ## Estrutura do repositório
 
@@ -62,6 +83,35 @@ logos/
 - Git
 
 Os comandos abaixo foram preparados para **Windows (CMD)**. Em outros sistemas, adapte a ativação do ambiente virtual e a cópia dos arquivos `.env`.
+
+## Logos AI — Copiloto de incidentes
+
+O Logos AI é um assistente conversacional integrado ao dashboard,
+desenvolvido para apoiar a triagem de incidentes logísticos.
+
+A integração utiliza a API do OpenRouter e três ferramentas
+de consulta somente leitura:
+
+- `get_incident_stats`: consulta indicadores agregados.
+- `list_incidents`: lista incidentes com filtros.
+- `get_incident`: consulta os detalhes de uma ocorrência.
+
+O agente não possui acesso direto ao banco de dados e não pode
+cadastrar, alterar ou excluir incidentes.
+
+O backend limita a quantidade de rodadas e chamadas de ferramentas
+e trata erros de indisponibilidade e limites dos provedores.
+
+O modelo principal e os fallbacks são configurados por variáveis
+de ambiente:
+
+- `OPENROUTER_API_KEY`
+- `OPENROUTER_MODEL`
+- `OPENROUTER_FALLBACK_MODELS`
+- `OPENROUTER_TIMEOUT`
+
+A funcionalidade depende da disponibilidade dos modelos
+configurados e pode sofrer limitações no plano gratuito.
 
 ## Como executar localmente
 
@@ -104,9 +154,16 @@ COOKIE_SECURE=false
 CORS_ORIGINS=http://localhost:5173
 DEMO_SEED_ENABLED=false
 DEMO_DATABASE_NAME=logos_db
+OPENROUTER_API_KEY=
+OPENROUTER_MODEL=nvidia/nemotron-3-super-120b-a12b:free
+OPENROUTER_FALLBACK_MODELS=nvidia/nemotron-3.5-lightning:free,xingchen-agi/xing4.0-29b-a4b:free
+OPENROUTER_TIMEOUT=60
 ```
 
 > `COOKIE_SECURE=false` é exclusivo para desenvolvimento em HTTP. Em produção, utilize HTTPS e `COOKIE_SECURE=true`. Não versione o arquivo `.env`.
+> A chave `OPENROUTER_API_KEY` é necessária apenas para utilizar o Logos AI.
+> As funcionalidades de autenticação, gerenciamento de incidentes,
+> filtros e dashboard continuam disponíveis sem essa integração.
 
 ### 4. Aplicar as migrações
 
@@ -211,18 +268,22 @@ Acesse **http://localhost:5173** e entre com uma das contas de demonstração ou
 | `PATCH` | `/incidents/{id}` | Editar dados de um incidente |
 | `PATCH` | `/incidents/{id}/status` | Atualizar status |
 | `DELETE` | `/incidents/{id}?version=1` | Excluir com controle de versão |
+| `POST` | `/ai/chat` | Conversar com o Logos AI |
+| `POST` | `/ai/incidents/{id}/analyze` | Analisar um incidente |
 
 Em atualizações e exclusões, a versão enviada deve corresponder à versão atual do registro. Caso contrário, a API responde com **409 Conflict**.
 
 ## Segurança
 
-- Senhas armazenadas com **Argon2**, nunca em texto puro.
-- Sessão baseada em **JWT** transportado por cookie `HttpOnly` com `SameSite=Lax`.
-- Cookie `Secure` habilitável por ambiente e obrigatório em produção HTTPS.
-- Token CSRF associado à sessão, enviado pelo frontend em `X-CSRF-Token` nas operações de escrita.
-- Validação da origem (`Origin`) das requisições de escrita e política CORS com origens permitidas.
-- Endpoints de incidentes acessíveis apenas a analistas autenticados e ativos.
-- Tratamento de conflitos de atualização para preservar a integridade dos dados.
+- Sessões JWT armazenadas em cookies `HttpOnly`.
+- Em desenvolvimento HTTP: `SameSite=Lax`.
+- Em produção HTTPS: `SameSite=None` e `Secure=true`,
+  permitindo a comunicação entre frontend e backend
+  em origens distintas.
+- Token CSRF e validação de Origin nas operações de escrita.
+- Política CORS restrita às origens autorizadas.
+
+Em produção, frontend e backend utilizam domínios diferentes. A configuração de cookies permite requisições entre esses domínios, mas depende das políticas de cookies de terceiros do navegador. As operações de escrita permanecem protegidas por token CSRF e validação de origem.
 
 ## Testes e validação
 
