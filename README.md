@@ -4,16 +4,18 @@ Aplicação full stack para registrar, acompanhar e gerenciar incidentes em oper
 
 O sistema centraliza ocorrências, permite acompanhar sua gravidade e situação e oferece indicadores para auxiliar a triagem operacional.
 
-## Demonstração online
 
-- Vídeo de apresentação: https://www.youtube.com/watch?v=LVyTLheiAuM
-- Aplicação: https://logos-8c71.onrender.com
-- API (Swagger): https://logos-api-9utr.onrender.com/docs
-- Health check: https://logos-api-9utr.onrender.com/health
+## Sobre o projeto
 
-O projeto está hospedado no Render, utilizando serviços gratuitos.
-O backend pode levar alguns instantes para iniciar após
-um período de inatividade.
+O Logos foi desenvolvido como um desafio técnico,
+com foco no aprendizado de Python e FastAPI,
+aplicando conceitos de desenvolvimento full stack,
+arquitetura em camadas e integração com IA.
+
+O ambiente de demonstração online foi desativado.
+O código-fonte permanece disponível neste repositório,
+com instruções para execução local.
+
 
 ### Credenciais de demonstração
 
@@ -47,7 +49,7 @@ exclusivamente à avaliação técnica.
 | Autenticação | JWT assinado com HS256, Argon2, cookie `HttpOnly` e token CSRF |
 | Qualidade | Pytest, Ruff e ESLint |
 | Inteligência Artificial | OpenRouter, LLMs com tool calling e agente com ferramentas de consulta |
-| Deploy | Render (Static Site, Web Service e PostgreSQL) |
+| Deploy realizado | Render (ambiente de demonstração desativado) |
 
 ## Estrutura do repositório
 
